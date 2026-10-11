@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  BUSINESS
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Customer {
+  id         String    @id @default(uuid())
+  fiscalCode String    @unique @map("fiscal_code")
+  firstName  String    @map("first_name")
+  lastName   String    @map("last_name")
+  email      String    @unique
+  createdAt  DateTime  @default(now()) @map("created_at")
+  deletedAt  DateTime? @map("deleted_at")
+  accounts   Account[]
+
+  @@map("customers")
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  iban         String        @unique
+  type         AccountType   @default(CHECKING)
+  balance      Decimal       @default(0) @db.Decimal(14, 2)
+  customerId   String        @map("customer_id")
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  createdAt    DateTime      @default(now()) @map("created_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  transactions Transaction[]
+
+  // Bug 2 extra: copre la query "conti attivi di un cliente" (WHERE customer_id = ? AND deleted_at IS NULL)
+  @@index([customerId, deletedAt])
+  @@map("accounts")
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  accountId   String            @map("account_id")
+  account     Account           @relation(fields: [accountId], references: [id])
+  amount      Decimal           @db.Decimal(14, 2)
+  description String?
+  status      TransactionStatus @default(PENDING)
+  executedAt  DateTime          @default(now()) @map("executed_at")
+
+  // Serve al report per periodo (feature opzionale)
+  @@index([executedAt, status])
+  @@map("transactions")
+}

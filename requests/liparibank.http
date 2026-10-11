@@ -1,0 +1,13 @@
+@base = http://localhost:3000
+
+### Bug 2 — lista clienti con conti (2 query, non 21)
+GET {{base}}/api/customers?page=1&limit=20
+
+### Bug 3 — sostituisci l'id con uno reale dalla lista sopra: balance deve essere una string "15420.50"
+GET {{base}}/api/accounts/00000000-0000-0000-0000-000000000000
+
+### Feature — report per periodo
+GET {{base}}/api/transactions/report?from=2026-01-01&to=2026-04-30
+
+### Feature — periodo non valido (422)
+GET {{base}}/api/transactions/report?from=2026-04-30&to=2026-01-01
